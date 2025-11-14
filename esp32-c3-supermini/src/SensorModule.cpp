@@ -13,9 +13,9 @@ void SensorModule::begin() {
     }
     Serial.println("MPU6050 initialized.");
 
-    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+    mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
+    mpu.setGyroRange(MPU6050_RANGE_2000_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_260_HZ);
     delay(100);
 }
 
@@ -29,6 +29,7 @@ String SensorModule::getIMUData() {
                   ", GX:" + String(g.gyro.x, 2) +
                   ", GY:" + String(g.gyro.y, 2) +
                   ", GZ:" + String(g.gyro.z, 2) +
-                  ", T:" + String(temp.temperature, 2);
+                  ", T:" + String(temp.temperature, 2)
+                  + "\n";
     return data;
 }
