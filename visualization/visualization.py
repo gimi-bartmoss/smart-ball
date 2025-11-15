@@ -12,9 +12,9 @@ s.connect((HOST, PORT))
 print(f"Connected to ESP32 at {HOST}:{PORT}")
 
 # Range of plots
-RANGE_ACC = 20     # m/s^2, [-RANGE_ACC, RANGE_ACC]
-RANGE_GYRO = 50   # deg/s, [-RANGE_GYRO, RANGE_GYRO]
-RANGE_TEMP = 50    # °C, [0, RANGE_TEMP]
+RANGE_ACC = 20   # m/s^2, [-RANGE_ACC, RANGE_ACC]
+RANGE_GYRO = 50  # deg/s, [-RANGE_GYRO, RANGE_GYRO]
+RANGE_TEMP = 50  # °C, [0, RANGE_TEMP]
 
 # Number of samples to keep in the visualization buffer (FIFO)
 N = 200
