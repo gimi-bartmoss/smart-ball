@@ -14,9 +14,7 @@ SensorModule sensor;
 void setup() {
     Serial.begin(115200);
     delay(1000);
-
-    Serial.println("SmartBall system starting...");
-
+    Serial.println("=== BOOT ===");
     wifiServer.begin(ssid, password);
     sensor.begin();
 
