@@ -1,9 +1,19 @@
-# smart ball configuration
+# SmartBall
 
-1. BUFFER_SIZE (SensorModule.h)
-2. impactThreshold = 35.0f (SensorNOdule.h)
+## Configuration
 
-# IMUSample
+The SmartBall firmware exposes several compile-time configuration
+parameters located in the sensor and networking modules.
+
+- **BUFFER_SIZE** (in `SensorModule.h`)  
+  Size of the circular IMU ring buffer.
+
+- **impactThreshold = 35.0f** (in `SensorModule.h`)  
+  Default acceleration-magnitude threshold for impact detection.
+
+---
+
+## IMU Sample Format
 
 ```c
 struct IMUSample {
@@ -13,54 +23,53 @@ struct IMUSample {
 };
 ```
 
-28 bytes for one record
+A single IMU record occupies **28 bytes** (7 floats × 4 bytes).
 
-# TCP Command Protocol
+---
 
-The SmartBall device communicates over TCP using plain ASCII text
-commands. All commands must be terminated with a newline character `\n`.
+## TCP Command Protocol
 
-## Commands
+The SmartBall device communicates over TCP using plain ASCII commands.  
+Every command must terminate with a newline (`\n`).
 
-### 1. `SET THRESH=<value>`
+### Commands
+
+#### `SET THRESH=<value>`
 
 Sets the impact detection threshold (acceleration magnitude in m/s²).
 
-**Parameter**\
-`<value>`: A floating-point number.
+**Parameter**  
+`<value>`: Floating-point number.
 
-**Response**
+**Response**  
+`OK THRESH=<value>`
 
-    OK THRESH=<value>
+---
 
-------------------------------------------------------------------------
-
-### 2. `GET THRESH`
+#### `GET THRESH`
 
 Returns the current impact detection threshold.
 
-**Response**
+**Response**  
+`THRESH=<value>`
 
-    THRESH=<value>
+---
 
-------------------------------------------------------------------------
-
-### 3. `PING`
+#### `PING`
 
 Checks whether the TCP server is alive (keep-alive).
 
-**Response**
+**Response**  
+`PONG`
 
-    PONG
+---
 
-------------------------------------------------------------------------
+### Error Responses
 
-## Error Responses
+#### `ERR invalid threshold`
 
-### `ERR invalid threshold`
+Triggered when the threshold value is not numeric or outside the allowed range.
 
--   The threshold value is not numeric or outside the allowed range.
+#### `ERR unknown command`
 
-### `ERR unknown command`
-
--   The command is unrecognized or malformed.
+Triggered when the command is unrecognized or malformed.
