@@ -1,5 +1,6 @@
 // main.cpp
 // TODO: create config.h to handle constants like SSID, password, port, initial threshold
+// TODO: add timestamp to exported IMU data
 
 #include <Arduino.h>
 #include "WiFiServerModule.h"
@@ -36,6 +37,9 @@ void loop() {
 
     // Sample IMU and perform impact detection
     sensor.update();
+
+    // DEBUG: print latest IMU data
+    Serial.println(sensor.getLatestData());
 
     // Only send IMU data after an impact event has been detected
     if (sensor.hasImpact()) {

@@ -92,3 +92,20 @@ String SensorModule::exportBufferedData() {
 
     return out;
 }
+
+String SensorModule::getLatestData() const {
+    if (count == 0) return "";
+
+    int idx = (head + count - 1) % BUFFER_SIZE;
+    const IMUSample& s = buffer[idx];
+
+    String out = "AX:" + String(s.ax, 2)
+               + ",AY:" + String(s.ay, 2)
+               + ",AZ:" + String(s.az, 2)
+               + ",GX:" + String(s.gx, 2)
+               + ",GY:" + String(s.gy, 2)
+               + ",GZ:" + String(s.gz, 2)
+               + ",T:"  + String(s.temp, 2);
+
+    return out;
+}

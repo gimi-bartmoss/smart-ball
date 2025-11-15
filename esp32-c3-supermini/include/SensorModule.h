@@ -26,6 +26,8 @@ public:
 
     float getThreshold() const { return impactThreshold; }
 
+    String getLatestData() const;
+
 private:
     // Structure to store one IMU sample in float form
     struct IMUSample {
