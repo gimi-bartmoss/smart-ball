@@ -1,4 +1,3 @@
-// SensorModule.cpp
 #include "SensorModule.h"
 
 void SensorModule::begin() {

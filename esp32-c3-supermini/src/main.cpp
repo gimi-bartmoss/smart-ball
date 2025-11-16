@@ -1,4 +1,3 @@
-// main.cpp
 // TODO: create config.h to handle constants like SSID, password, port, initial threshold
 // TODO: add timestamp to exported IMU data
 
