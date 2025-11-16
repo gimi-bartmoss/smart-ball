@@ -6,12 +6,12 @@ HOST = "0.0.0.0"  # Listen on all interfaces
 PORT = 8080
 
 def generate_mock_imu():
-    ax = random.uniform(-5, 5)
-    ay = random.uniform(-5, 10)
-    az = random.uniform(-6, -3)
+    ax = random.uniform(-5, 15)
+    ay = random.uniform(-3, 3)
+    az = random.uniform(-5, 5)
     gx = random.uniform(-5, 5)
-    gy = random.uniform(-0.05, 0.05)
-    gz = random.uniform(-0.05, 0.05)
+    gy = random.uniform(-30, 0)
+    gz = random.uniform(-5, 5)
     t  = random.uniform(28.0, 33.0)
 
     return f"AX:{ax:.2f}, AY:{ay:.2f}, AZ:{az:.2f}, GX:{gx:.2f}, GY:{gy:.2f}, GZ:{gz:.2f}, T:{t:.2f}"
@@ -28,6 +28,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         while True:
             imu_line = generate_mock_imu()
-            conn.sendall((imu_line + "\n").encode())
+
+            # Send the IMU data line
+            line = imu_line + "\r\n"
+            conn.send(line.encode())
+
             print("[Mock ESP32 Sent]", imu_line)
             time.sleep(0.5)
