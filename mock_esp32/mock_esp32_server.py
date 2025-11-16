@@ -5,6 +5,7 @@ import random
 HOST = "0.0.0.0"  # Listen on all interfaces
 PORT = 8080
 
+# Function to generate random mock IMU data
 def generate_mock_imu():
     ax = random.uniform(-5, 15)
     ay = random.uniform(-3, 3)
