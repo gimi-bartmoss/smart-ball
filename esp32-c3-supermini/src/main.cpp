@@ -51,5 +51,5 @@ void loop() {
         Serial.println("Impact event handled, sensor ready for next throw.");
     }
 
-    delay(5);
+    delay(500);
 }

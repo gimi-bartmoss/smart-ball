@@ -54,4 +54,9 @@ private:
 
     // Compute magnitude of acceleration vector |a|
     float computeAccelNorm(const IMUSample& s) const;
+
+    // Zombie Mode + Auto-Recovery
+    bool isZombie(const IMUSample& s) const;
+    void recoverFromError();
+    int consecutiveErrors = 0;
 };

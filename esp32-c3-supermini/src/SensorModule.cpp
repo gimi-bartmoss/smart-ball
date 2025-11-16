@@ -1,11 +1,17 @@
 #include "SensorModule.h"
 
 void SensorModule::begin() {
-    Wire.begin(6, 7); // SDA = 6, SCL = 7
+    Wire.begin(6, 7);  // SDA = 6, SCL = 7
 
     if (!mpu.begin()) {
         Serial.println("Failed to find MPU6050 chip!");
-        while (1) { delay(10); }
+        Serial.println("Retrying...");
+        delay(200);
+
+        if (!mpu.begin()) {
+            Serial.println("[Sensor] MPU6050 not found even after retry!");
+            return;
+        }
     }
 
     Serial.println("MPU6050 initialized.");
@@ -19,6 +25,7 @@ void SensorModule::begin() {
     head = 0;
     count = 0;
     impactDetected = false;
+    consecutiveErrors = 0;
 
     Serial.print("Impact threshold (m/s^2): ");
     Serial.println(impactThreshold);
@@ -44,7 +51,17 @@ float SensorModule::computeAccelNorm(const IMUSample& s) const {
 
 void SensorModule::update() {
     sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
+    
+    bool ok = mpu.getEvent(&a, &g, &temp);
+    if (!ok) {
+        consecutiveErrors++;
+        Serial.println("[Sensor] getEvent() failed.");
+
+        if (consecutiveErrors >= 3) {
+            recoverFromError();
+        }
+        return;
+    }
 
     IMUSample sample;
     sample.ax   = a.acceleration.x;
@@ -54,6 +71,20 @@ void SensorModule::update() {
     sample.gy   = g.gyro.y;
     sample.gz   = g.gyro.z;
     sample.temp = temp.temperature;
+
+    // Zombie Mode Detection
+    if (isZombie(sample)) {
+        consecutiveErrors++;
+        Serial.println("[Sensor] Zombie sample detected.");
+
+        if (consecutiveErrors >= 5) {  //Threshold for recovery
+            recoverFromError();
+        }
+        return;
+    }
+
+    // Reset error counter on successful read
+    consecutiveErrors = 0;
 
     // Store raw IMU sample into ring buffer
     pushSample(sample);
@@ -107,4 +138,30 @@ String SensorModule::getLatestData() const {
                + ",T:"  + String(s.temp, 2);
 
     return out;
+}
+
+bool SensorModule::isZombie(const IMUSample& s) const {
+    bool allZero =
+        s.ax == 0.0f && s.ay == 0.0f && s.az == 0.0f &&
+        s.gx == 0.0f && s.gy == 0.0f && s.gz == 0.0f;
+
+    bool tempZombie = fabs(s.temp - 36.53f) < 0.2f;
+
+    return allZero && tempZombie;
+}
+
+void SensorModule::recoverFromError() {
+    Serial.println("[Sensor] Zombie/error detected — reinitializing MPU6050 (begin())...");
+
+    Wire.end();
+    delay(5);
+    Wire.begin(6, 7);
+
+    head = 0;
+    count = 0;
+    consecutiveErrors = 0;
+
+    begin();
+
+    Serial.println("[Sensor] MPU6050 reinitialized via begin().");
 }
