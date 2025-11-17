@@ -2,14 +2,16 @@ import socket
 import time
 import argparse
 from random_generator import generate_random_imu
+from real_generator import generate_real_imu
 
 HOST = "0.0.0.0"
 PORT = 8080
 
 def run_mock_server(data_source="random", interval=0.5):
-    generator = generate_random_imu if data_source == "random" else None
+    generator = generate_random_imu if data_source == "random" else generate_real_imu
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((HOST, PORT))
         s.listen(1)
         print(f"[Mock ESP32] Listening on {HOST}:{PORT} (mode={data_source})")
