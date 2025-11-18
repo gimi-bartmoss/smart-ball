@@ -6,11 +6,6 @@ import numpy as np
 HOST = "192.168.4.1"
 PORT = 8080
 
-# Range of plots
-RANGE_ACC = 20   # m/s^2, [-RANGE_ACC, RANGE_ACC]
-RANGE_GYRO = 50  # deg/s, [-RANGE_GYRO, RANGE_GYRO]
-RANGE_TEMP = 50  # °C, [0, RANGE_TEMP]
-
 # Number of samples to keep in the visualization buffer (FIFO)
 N = 200
 
@@ -42,7 +37,7 @@ def main():
     line_ax, = ax_acc.plot(ax_data, label="AX")
     line_ay, = ax_acc.plot(ay_data, label="AY")
     line_az, = ax_acc.plot(az_data, label="AZ")
-    ax_acc.set_ylim(-RANGE_ACC, RANGE_ACC)
+    # ax_acc.set_ylim(-RANGE_ACC, RANGE_ACC)
     ax_acc.set_title("Real-time Acceleration")
     ax_acc.set_ylabel("m/s^2")
     ax_acc.legend()
@@ -52,7 +47,7 @@ def main():
     line_gx, = ax_gyro.plot(gx_data, label="GX")
     line_gy, = ax_gyro.plot(gy_data, label="GY")
     line_gz, = ax_gyro.plot(gz_data, label="GZ")
-    ax_gyro.set_ylim(-RANGE_GYRO, RANGE_GYRO)
+    # ax_gyro.set_ylim(-RANGE_GYRO, RANGE_GYRO)
     ax_gyro.set_title("Real-time Gyroscope")
     ax_gyro.set_ylabel("deg/s")
     ax_gyro.legend()
@@ -60,7 +55,7 @@ def main():
     # Temperature subplot
     ax_temp = axes[2]
     line_temp, = ax_temp.plot(temp_data, label="Temperature (°C)")
-    ax_temp.set_ylim(0, RANGE_TEMP)
+    # ax_temp.set_ylim(0, RANGE_TEMP)
     ax_temp.set_title("IMU Temperature")
     ax_temp.set_xlabel("Samples")
     ax_temp.set_ylabel("°C")
@@ -123,11 +118,33 @@ def main():
 
         line_temp.set_ydata(temp_data)
 
+        # Autoscale y-axis based on current data
+        autoscale_axis(ax_acc, [ax_data, ay_data, az_data], min_range=2.0)
+        autoscale_axis(ax_gyro, [gx_data, gy_data, gz_data], min_range=5.0)
+        autoscale_axis(ax_temp, [temp_data], min_range=2.0)
+
         return (
             line_ax, line_ay, line_az,
             line_gx, line_gy, line_gz,
             line_temp
         )
+
+    def autoscale_axis(axis, data_list, min_range=1.0, margin_ratio=0.1):
+        data = np.concatenate(data_list)
+        dmin = float(np.min(data))
+        dmax = float(np.max(data))
+
+        if not np.isfinite(dmin) or not np.isfinite(dmax):
+            return
+
+        if abs(dmax - dmin) < 1e-6:
+            center = dmin
+            half = min_range / 2.0
+            axis.set_ylim(center - half, center + half)
+        else:
+            diff = dmax - dmin
+            margin = diff * margin_ratio
+            axis.set_ylim(dmin - margin, dmax + margin)
 
     # Start animation loop
     ani = FuncAnimation(fig, update, interval=50)

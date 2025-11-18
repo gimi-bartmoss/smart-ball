@@ -26,7 +26,7 @@ def generate_real_imu():
     if current_phase == "idle":
         ax = random.uniform(-0.2, 0.2)
         ay = random.uniform(-0.2, 0.2)
-        az = random.uniform(9.5, 9.8)
+        az = random.uniform(-9.5, -9.8)
         gx = gy = gz = random.uniform(-0.5, 0.5)
     elif current_phase == "accelerating":
         ax = random.uniform(10, 25)
@@ -39,9 +39,9 @@ def generate_real_imu():
         ax = random.uniform(-5, 5)
         ay = random.uniform(-5, 5)
         az = random.uniform(-2, 2)
-        gx = random.uniform(500, 2000)
-        gy = random.uniform(-500, 500)
-        gz = random.uniform(-500, 500)
+        gx = random.uniform(1500, 2000)
+        gy = random.uniform(-300, 300)
+        gz = random.uniform(-300, 300)
     elif current_phase == "stopping":
         ax = random.uniform(-3, 3)
         ay = random.uniform(-3, 3)
