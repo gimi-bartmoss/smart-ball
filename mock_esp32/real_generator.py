@@ -45,7 +45,7 @@ def generate_real_imu():
     elif current_phase == "stopping":
         ax = random.uniform(-3, 3)
         ay = random.uniform(-3, 3)
-        az = random.uniform(8.0, 9.8)
+        az = random.uniform(-8.0, -9.8)
         gx = gy = gz = random.uniform(-10, 10)
     else:
         ax = ay = az = gx = gy = gz = 0.0
