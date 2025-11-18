@@ -16,7 +16,7 @@ cd "$ROOT_DIR" || exit 1
 
 # Start the mock esp32 server
 echo -e "${GREEN}[Demo] Starting mock ESP32 server...${NC}"
-python3 mock_esp32/server.py --mode random --interval 0.5 &
+python3 mock_esp32/server.py --mode random --interval 0.1 &
 SERVER_PID=$!  # Record the server’s process ID
 
 sleep 1  # Wait for the server to start
