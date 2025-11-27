@@ -14,21 +14,21 @@ void WiFiServerModule::begin(const char* ssid, const char* password) {
 }
 
 void WiFiServerModule::handleClient(String data) {
-    static WiFiClient client = server.available();
-
-    if (!client || !client.connected()) {
-        WiFiClient newClient = server.available();
+    if (client && client.connected()) {
+            client.print(data);
+    } else {
+        WiFiClient newClient = server.available();    
         if (newClient) {
+            if (client) {
+                client.stop();
+            }
             client = newClient;
-            Serial.println("Client connected!");
-        }
-        return;
-    }
-
-    client.print(data);
-
-    if (!client.connected()) {
-        client.stop();
-        Serial.println("Client disconnected.");
+            client.print(data);
+            return;
+            }
+            if (client) {
+                client.stop();
+                client = WiFiClient();
+            }
     }
 }

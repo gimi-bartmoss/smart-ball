@@ -9,4 +9,5 @@ public:
 
 private:
     WiFiServer server;
+    WiFiClient client;
 };
