@@ -68,7 +68,7 @@ ax_temp.set_ylabel("°C")
 ax_temp.legend()
 
 buffer = bytearray()
-PACKET_SIZE = 32
+PACKET_SIZE = 32  # size of struct IMUData
 
 # Animation update function
 # Reads one line of IMU data and updates the visualization buffers
@@ -80,16 +80,30 @@ def update(frame):
     try:
         data = s.recv(1024)
         if data:
+            print(f"Received {len(data)} bytes.")
             buffer.extend(data)
+        else:
+            # Socket was closed by the other end
+            print("Socket closed by remote.")
+            # To-do: maybe stop the animation here
+            pass
+
     except BlockingIOError:
         # No data available right now, that's fine
         pass
+    except Exception as e:
+        print(f"An unexpected socket error occurred: {e}")
+        # To-do: maybe stop the animation here
+        return line_ax, line_ay, line_az, line_gx, line_gy, line_gz, line_temp
     
+    print(f"Buffer size: {len(buffer)} bytes.")
+
     if len(buffer) < PACKET_SIZE:
         # Not enough data for a full packet, wait for more
         return line_ax, line_ay, line_az, line_gx, line_gy, line_gz, line_temp
 
     # We have at least one full packet
+    print(f"Processing 1 packet from buffer.")
     packet = buffer[:PACKET_SIZE]
     del buffer[:PACKET_SIZE]
 
