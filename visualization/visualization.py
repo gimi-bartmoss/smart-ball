@@ -10,6 +10,7 @@ PORT = 8080
 # Establish TCP connection with the ESP32 device
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
+s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 print(f"Connected to ESP32 at {HOST}:{PORT}")
 
 # Range of plots

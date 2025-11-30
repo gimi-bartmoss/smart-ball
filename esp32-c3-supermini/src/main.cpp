@@ -21,5 +21,5 @@ void loop() {
     wifiServer.handleClient(&data);
     Serial.print("Sent data with timestamp: ");
     Serial.println(data.timestamp);
-    delay(500);
+    delay(40);  // Interval
 }
