@@ -6,7 +6,7 @@
 Adafruit_MPU6050 mpu;
 
 void SensorModule::begin() {
-    Wire.begin(6, 7);
+    Wire.begin(9, 8);
     if (!mpu.begin()) {
         Serial.println("Failed to find MPU6050 chip!");
         while (1) { delay(10); }
