@@ -19,17 +19,19 @@ void SensorModule::begin() {
     delay(100);
 }
 
-String SensorModule::getIMUData() {
+IMUData SensorModule::getIMUData() {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
 
-    String data = "AX:" + String(a.acceleration.x, 2) +
-                  ", AY:" + String(a.acceleration.y, 2) +
-                  ", AZ:" + String(a.acceleration.z, 2) +
-                  ", GX:" + String(g.gyro.x, 2) +
-                  ", GY:" + String(g.gyro.y, 2) +
-                  ", GZ:" + String(g.gyro.z, 2) +
-                  ", T:" + String(temp.temperature, 2)
-                  + "\n";
+    IMUData data;
+    data.timestamp = millis();
+    data.ax = a.acceleration.x;
+    data.ay = a.acceleration.y;
+    data.az = a.acceleration.z;
+    data.gx = g.gyro.x;
+    data.gy = g.gyro.y;
+    data.gz = g.gyro.z;
+    data.temp = temp.temperature;
+
     return data;
 }

@@ -13,9 +13,9 @@ void WiFiServerModule::begin(const char* ssid, const char* password) {
     Serial.println("TCP server started.");
 }
 
-void WiFiServerModule::handleClient(String data) {
+void WiFiServerModule::handleClient(const IMUData* data) {
     if (client && client.connected()) {
-            client.print(data);
+            client.write((const uint8_t*)data, sizeof(IMUData));
     } else {
         WiFiClient newClient = server.available();    
         if (newClient) {
@@ -23,7 +23,7 @@ void WiFiServerModule::handleClient(String data) {
                 client.stop();
             }
             client = newClient;
-            client.print(data);
+            client.write((const uint8_t*)data, sizeof(IMUData));
             return;
             }
             if (client) {

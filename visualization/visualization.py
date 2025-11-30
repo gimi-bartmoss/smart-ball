@@ -1,4 +1,5 @@
 import socket
+import struct
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
@@ -64,34 +65,22 @@ ax_temp.set_xlabel("Samples")
 ax_temp.set_ylabel("°C")
 ax_temp.legend()
 
-# Parse IMU ASCII data from ESP32
-def parse_imu(line: str) -> dict[str, float]:
-    result = {}
-    for p in line.split(','):
-        if ':' not in p:
-            continue
-        key, *rest = p.split(':')
-        if not rest:
-            continue
-        try:
-            value = float(rest[0].strip())
-            result[key.strip()] = value
-        except ValueError:
-            continue
-    return result
-
 # Animation update function
 # Reads one line of IMU data and updates the visualization buffers
 def update(frame):
     global ax_data, ay_data, az_data
     global gx_data, gy_data, gz_data, temp_data
 
-    raw = s.recv(1024)
-    if not raw:
-        return
+    raw = s.recv(32)
+    if len(raw) < 32:
+        return (
+            line_ax, line_ay, line_az,
+            line_gx, line_gy, line_gz,
+            line_temp
+        )
 
-    line = raw.decode().strip()
-    imu = parse_imu(line)
+    unpacked_data = struct.unpack('<I7f', raw)
+    timestamp, ax, ay, az, gx, gy, gz, temp = unpacked_data
 
     # Shift buffers to the left and append new values at the end
     ax_data = np.roll(ax_data, -1)
@@ -102,13 +91,13 @@ def update(frame):
     gz_data = np.roll(gz_data, -1)
     temp_data = np.roll(temp_data, -1)
 
-    ax_data[-1] = imu.get("AX", 0)
-    ay_data[-1] = imu.get("AY", 0)
-    az_data[-1] = imu.get("AZ", 0)
-    gx_data[-1] = imu.get("GX", 0)
-    gy_data[-1] = imu.get("GY", 0)
-    gz_data[-1] = imu.get("GZ", 0)
-    temp_data[-1] = imu.get("T", 0)
+    ax_data[-1] = ax
+    ay_data[-1] = ay
+    az_data[-1] = az
+    gx_data[-1] = gx
+    gy_data[-1] = gy
+    gz_data[-1] = gz
+    temp_data[-1] = temp
 
     # Update plot data
     line_ax.set_ydata(ax_data)
@@ -128,7 +117,7 @@ def update(frame):
     )
 
 # Start animation loop
-ani = FuncAnimation(fig, update, interval=50)
+ani = FuncAnimation(fig, update, interval=50, blit=True)
 plt.tight_layout()
 plt.show()
 

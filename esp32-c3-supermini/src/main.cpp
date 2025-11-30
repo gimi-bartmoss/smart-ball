@@ -17,9 +17,9 @@ void setup() {
 }
 
 void loop() {
-    String data = sensor.getIMUData();
-    wifiServer.handleClient(data);
-    Serial.print("Sent: ");
-    Serial.print(data);
+    IMUData data = sensor.getIMUData();
+    wifiServer.handleClient(&data);
+    Serial.print("Sent data with timestamp: ");
+    Serial.println(data.timestamp);
     delay(500);
 }
