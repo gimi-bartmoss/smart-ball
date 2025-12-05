@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-HOST = "192.168.4.1"
-PORT = 8080
+HOST = "localhost"
+PORT = 8081
 
 # Establish TCP connection with the ESP32 device
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
