@@ -31,8 +31,9 @@ The trajectory of the ball is estimated by processing the raw sensor data from t
 1. **Acceleration Correction**: The initial orientation is used to subtract the effect of gravity from the accelerometer readings. This leaves us with the linear acceleration of the ball.
 1. **Trajectory Calculation**: By integrating the linear acceleration twice with respect to time, we can calculate the ball's velocity and then its position, effectively reconstructing its path of motion.
 
-- `Velocity = Initial Velocity + ∫(Linear Acceleration) dt`
-- `Position = Initial Position + ∫(Velocity) dt`
+- Velocity: $v = v_0 + \int_{t_0}^{t} a(\tau) d\tau$
+
+- Position: $x = x_0 + \int_{t_0}^{t} v(\tau) d\tau$
 
 This process allows us to translate the raw electrical signals from the sensor into a meaningful 3D trajectory.
 
@@ -101,13 +102,13 @@ pip install numpy matplotlib pyglet
     - **2D Visualization**: To see a simple 2D plot of the data, run:
 
         ```bash
-        python visualization/visualization.py
+        python tools/visualization.py
         ```
 
     - **3D Visualization**: To see a full 3D representation of the ball's trajectory, run:
 
         ```bash
-        python visualization_3d/visualization_3d.py
+        python tools/visualization_3d.py
         ```
 
 ## Example Visualizations
@@ -128,11 +129,9 @@ pip install numpy matplotlib pyglet
 
 ```bash
 .
-├── visualization_3d/     # 3D visualization scripts
+├── visualization_3d/       # 3D visualization scripts
 ├── esp32-c3-supermini/     # Firmware for the ESP32-C3
 ├── figure/                 # Figures for the README
-├── mock_esp32/             # Mock ESP32 for testing
 ├── raw_data/               # Raw sensor data
-├── tools/                  # Python scripts for data logging, relay, etc.
-└── visualization/          # 2D visualization scripts
+└── tools/                  # Python scripts for data logging, relay, visualization etc.
 ```
