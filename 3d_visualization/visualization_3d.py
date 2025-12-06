@@ -52,7 +52,7 @@ def calculate_kinematics(df):
     # --- 1. Initial Alignment ---
     # Use the first N static samples to determine the initial orientation.
     # The goal is to align the sensor's measured gravity vector with the World frame gravity [0, 0, -g].
-    n_static = 10
+    n_static = 20
     if len(df) < n_static:
         raise ValueError("Not enough data points for initial alignment.")
 
