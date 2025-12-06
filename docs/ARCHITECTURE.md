@@ -18,7 +18,7 @@ The system consists of three main subsystems: the Embedded Sensing Layer, the Ne
 
 - Selection Rationale: Built-in Wi-Fi stack, compact size suitable for embedding in a ball, and low power consumption.
 
-### Inertial Measurement Unit (IMU): InvenSense MPU-6050.
+### Inertial Measurement Unit (IMU): InvenSense MPU-6050
 
 - Specifications: 3-axis accelerometer and 3-axis gyroscope.
 - Configuration: Accelerometer range $\pm16g$, Gyroscope range $\pm2000^\circ/s$ (defined in SensorModule.cpp).
@@ -118,7 +118,7 @@ Analysis based on the system's visualization output:
 
 - Stationary State:
 
-  Despite sensor noise, the velocity norm returns to zero after ZUPT processing, 
+  Despite sensor noise, the velocity norm returns to zero after ZUPT processing,
   demonstrating the algorithm's effectiveness in stationary detection.
 
 ## Conclusion
