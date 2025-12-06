@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+import argparse
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
@@ -297,8 +298,15 @@ def plot_data(df):
     plt.show()
 
 if __name__ == "__main__":
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    filepath = os.path.join(script_dir, '../raw_data/projectile.txt')
+    parser = argparse.ArgumentParser(description='Visualize 3D motion data from a smart ball.')
+    parser.add_argument('--input', type=str, help='Path to the input data file.')
+    args = parser.parse_args()
+    if args.input:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(script_dir, args.input)
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(script_dir, '../raw_data/projectile.txt')
             
     df = parse_data(filepath)
     is_stationary = True
