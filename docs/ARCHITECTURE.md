@@ -156,7 +156,7 @@ During the initial system startup, the gravity vector in the static state is use
 - Calculate the mean acceleration vector $\vec{a}_{static}$ during the static period.
 - Define the World Frame gravity vector
 
-$$\vec{g}\_{\text{world}} = [0, 0, ||\vec{a}\_{\text{static}}||]$$
+$$\vec{g}\_{\text{world}} = [0, 0, \Vert \vec{a}\_{\text{static}} \Vert]$$
 
 - Calculate the rotation axis $\vec{u}$ using the Cross Product:
 
