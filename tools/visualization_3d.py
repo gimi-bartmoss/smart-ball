@@ -164,7 +164,7 @@ def calculate_kinematics(df):
             if raw_gyro_mag > 1:  # Rotation Threshold: 1
                 is_stationary = False
         else:
-            v_curr = v_curr + 0.5 * (acc_motion[i] + acc_motion[i-1]) * dt
+            v_curr = v_curr + 0.5 * (accelerations_world[i] + accelerations_world[i-1]) * dt
             
             is_stationary = False
             is_pure_rotation = False
@@ -399,18 +399,20 @@ def plot_data(df):
     plt.show()
 
 # TODO: update figure/
-# TODO: connect to the server
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Visualize 3D motion data from a smart ball.')
     parser.add_argument('--input', type=str, help='Path to the input data file.')
     args = parser.parse_args()
+
+    filepath = None
     if args.input:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        filepath = os.path.join(script_dir, args.input)
+        # Resolve the path from the current working directory to get an absolute path
+        filepath = os.path.abspath(args.input)
     else:
+        # Default file logic remains relative to the script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         filepath = os.path.join(script_dir, '../raw_data/projectile.txt')
-            
+
     df = parse_data(filepath)
     is_stationary = True
     is_pure_rotation = True
