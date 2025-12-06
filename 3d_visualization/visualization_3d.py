@@ -31,8 +31,9 @@ def parse_data(filepath):
     
     df = pd.DataFrame(data)
     
-    # Convert timestamp from milliseconds to seconds
+    # Convert timestamp from milliseconds to seconds and normalize to start from 0
     df['Time'] = df['Timestamp'] / 1000.0
+    df['Time'] = df['Time'] - df['Time'].iloc[0]
     
     # Calculate time delta (dt)
     df['dt'] = df['Time'].diff().fillna(0)
@@ -51,18 +52,23 @@ def calculate_kinematics(df):
     
     # --- 1. Initial Alignment ---
     # Use the first N static samples to determine the initial orientation.
-    # The goal is to align the sensor's measured gravity vector with the World frame gravity [0, 0, -g].
+    # The goal is to align the sensor's measured gravity vector (which points up, ~+9.8m/s^2 on Z)
+    # with the World frame's gravity vector, which we define to also be [0, 0, +g].
     n_static = 20
     if len(df) < n_static:
         raise ValueError("Not enough data points for initial alignment.")
 
-    acc_static = df[['AX', 'AY', 'AZ']].iloc[:n_static].mean().values
+    acc_static_mean = df[['AX', 'AY', 'AZ']].iloc[:n_static].mean().values
     
-    # Define World Gravity Vector (Assuming Z-up coordinate system, gravity points down)
-    world_gravity = np.array([0, 0, -9.81])
+    # Calculate gyro bias
+    gyro_bias = df[['GX', 'GY', 'GZ']].iloc[:n_static].mean().values 
+    
+    # Measured gravity vector in Body Frame. We define world gravity to match the direction of the sensor's measurement.
+    local_gravity_magnitude = np.linalg.norm(acc_static_mean)
+    world_gravity = np.array([0, 0, local_gravity_magnitude])
     
     # Normalize vectors for calculation
-    acc_static_norm = acc_static / np.linalg.norm(acc_static)
+    acc_static_norm = acc_static_mean / np.linalg.norm(acc_static_mean)
     world_g_norm = world_gravity / np.linalg.norm(world_gravity)
     
     # Compute the rotation axis (cross product) and angle (dot product) required to align the vectors
@@ -83,6 +89,7 @@ def calculate_kinematics(df):
     # Initialize arrays to store results
     velocities = np.zeros((len(df), 3))
     positions = np.zeros((len(df), 3))
+    accelerations_world = np.zeros((len(df), 3))
     
     # State vectors
     v_curr = np.array([0.0, 0.0, 0.0])
@@ -104,7 +111,7 @@ def calculate_kinematics(df):
         
         # A. Attitude Update
         # Integrate angular velocity to update orientation (Quaternion integration)
-        omega = gyro_data[i]
+        omega = gyro_data[i] - gyro_bias
         angle_magnitude = np.linalg.norm(omega) * dt
         
         if angle_magnitude > 0:
@@ -121,6 +128,7 @@ def calculate_kinematics(df):
         # C. Gravity Compensation
         # Subtract the gravity vector to get pure motion acceleration
         acc_motion = acc_world - world_gravity
+        accelerations_world[i] = acc_motion
         
         # D. Velocity Integration (Euler method)
         v_curr = v_curr + acc_motion * dt
@@ -164,6 +172,10 @@ def calculate_kinematics(df):
     df['VY'] = velocities_corrected[:, 1]
     df['VZ'] = velocities_corrected[:, 2]
     
+    df['AMX'] = accelerations_world[:, 0]
+    df['AMY'] = accelerations_world[:, 1]
+    df['AMZ'] = accelerations_world[:, 2]
+    
     # Store uncorrected position for comparison (optional)
     df['X_raw'] = positions[:, 0]
     df['Y_raw'] = positions[:, 1]
@@ -175,13 +187,15 @@ def plot_data(df):
     """
     Plots the 3D trajectory and kinematic data.
     """
-    fig = plt.figure(figsize=(15, 12))
+    fig = plt.figure(figsize=(18, 12)) # Adjusted figure size for a better layout
     plt.suptitle("Projectile Motion Analysis (INS with ZUPT)", fontsize=16)
 
-    # 1. 3D Trajectory
-    ax1 = fig.add_subplot(2, 2, 1, projection='3d')
+    # Define the grid
+    grid = (3, 2)
+
+    # 1. 3D Trajectory (Left column, spanning 2 rows)
+    ax1 = plt.subplot2grid(grid, (0, 0), rowspan=2, projection='3d')
     ax1.plot(df['X'], df['Y'], df['Z'], label='Corrected Trajectory', linewidth=2)
-    # Optional: Plot raw trajectory to show drift magnitude
     ax1.plot(df['X_raw'], df['Y_raw'], df['Z_raw'], label='Raw Integration (Drift)', linestyle=':', alpha=0.5)
     ax1.set_title("3D Trajectory")
     ax1.set_xlabel("X (m)")
@@ -189,61 +203,68 @@ def plot_data(df):
     ax1.set_zlabel("Z (m)")
     ax1.legend()
 
-    # 2. Velocity components vs. Time
-    # Calculate Max Speed (Norm of velocity vector)
+    # 2. Velocity components vs. Time (Left column, bottom)
     vel_mag = np.linalg.norm(df[['VX', 'VY', 'VZ']].values, axis=1)
     max_speed = np.max(vel_mag)
-
-    ax2 = fig.add_subplot(2, 2, 2)
+    ax2 = plt.subplot2grid(grid, (2, 0))
     ax2.plot(df['Time'], df['VX'], label='VX', alpha=0.7)
     ax2.plot(df['Time'], df['VY'], label='VY', alpha=0.7)
     ax2.plot(df['Time'], df['VZ'], label='VZ', alpha=0.7)
     ax2.plot(df['Time'], vel_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    # Display Max Speed in Title
     ax2.set_title(f"Velocity (Max Norm: {max_speed:.2f} m/s)")
     ax2.set_xlabel("Time (s)")
     ax2.set_ylabel("Velocity (m/s)")
     ax2.legend()
     ax2.grid(True)
 
-    # 3. Acceleration (Three Axis + Norm)
-    acc_mag = np.linalg.norm(df[['AX', 'AY', 'AZ']].values, axis=1)
-    max_acc = np.max(acc_mag)
-
-    ax3 = fig.add_subplot(2, 2, 3)
+    # 3. Raw Acceleration (Right column, top)
+    acc_raw_mag = np.linalg.norm(df[['AX', 'AY', 'AZ']].values, axis=1)
+    max_acc_raw = np.max(acc_raw_mag)
+    ax3 = plt.subplot2grid(grid, (0, 1))
     ax3.plot(df['Time'], df['AX'], label='AX', alpha=0.7)
     ax3.plot(df['Time'], df['AY'], label='AY', alpha=0.7)
     ax3.plot(df['Time'], df['AZ'], label='AZ', alpha=0.7)
-    ax3.plot(df['Time'], acc_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    ax3.set_title(f"Acceleration (Max Norm: {max_acc:.2f} m/s^2)")
+    ax3.plot(df['Time'], acc_raw_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
+    ax3.set_title(f"Raw Acceleration (Max Norm: {max_acc_raw:.2f} m/s^2)")
     ax3.set_xlabel("Time (s)")
     ax3.set_ylabel("Accel (m/s^2)")
     ax3.legend()
     ax3.grid(True)
-    
-    # 4. Angular Velocity (Three Axis + Norm)
-    # Calculate Max Rotation Speed
-    gyro_mag = np.linalg.norm(df[['GX', 'GY', 'GZ']].values, axis=1)
-    max_rot_speed = np.max(gyro_mag)
 
-    ax4 = fig.add_subplot(2, 2, 4)
-    ax4.plot(df['Time'], df['GX'], label='GX', alpha=0.7)
-    ax4.plot(df['Time'], df['GY'], label='GY', alpha=0.7)
-    ax4.plot(df['Time'], df['GZ'], label='GZ', alpha=0.7)
-    ax4.plot(df['Time'], gyro_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    # Display Max Rotation Speed in Title
-    ax4.set_title(f"Angular Velocity (Max Norm: {max_rot_speed:.2f} rad/s)")
+    # 4. World Frame Acceleration (Right column, middle)
+    acc_world_mag = np.linalg.norm(df[['AMX', 'AMY', 'AMZ']].values, axis=1)
+    max_acc_world = np.max(acc_world_mag)
+    ax4 = plt.subplot2grid(grid, (1, 1))
+    ax4.plot(df['Time'], df['AMX'], label='AMX', alpha=0.7)
+    ax4.plot(df['Time'], df['AMY'], label='AMY', alpha=0.7)
+    ax4.plot(df['Time'], df['AMZ'], label='AMZ', alpha=0.7)
+    ax4.plot(df['Time'], acc_world_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
+    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2)")
     ax4.set_xlabel("Time (s)")
-    ax4.set_ylabel("Rad/s")
+    ax4.set_ylabel("Accel (m/s^2)")
     ax4.legend()
     ax4.grid(True)
+    
+    # 5. Angular Velocity (Right column, bottom)
+    gyro_mag = np.linalg.norm(df[['GX', 'GY', 'GZ']].values, axis=1)
+    max_rot_speed = np.max(gyro_mag)
+    ax5 = plt.subplot2grid(grid, (2, 1))
+    ax5.plot(df['Time'], df['GX'], label='GX', alpha=0.7)
+    ax5.plot(df['Time'], df['GY'], label='GY', alpha=0.7)
+    ax5.plot(df['Time'], df['GZ'], label='GZ', alpha=0.7)
+    ax5.plot(df['Time'], gyro_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
+    ax5.set_title(f"Angular Velocity (Max Norm: {max_rot_speed:.2f} rad/s)")
+    ax5.set_xlabel("Time (s)")
+    ax5.set_ylabel("Rad/s")
+    ax5.legend()
+    ax5.grid(True)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    filepath = os.path.join(script_dir, 'projectile_1.txt')
+    filepath = os.path.join(script_dir, './projectile.txt')
             
     df = parse_data(filepath)
     df_kinematics = calculate_kinematics(df)
