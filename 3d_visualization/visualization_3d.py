@@ -126,22 +126,37 @@ def calculate_kinematics(df):
         acc_world = q_current.apply(acc_body)
         
         # C. Gravity Compensation
+
         # Subtract the gravity vector to get pure motion acceleration
         acc_motion = acc_world - world_gravity
+
         accelerations_world[i] = acc_motion
         acc_motion_mag = np.linalg.norm(acc_motion)
+
+        raw_gyro_mag = np.linalg.norm(gyro_data[i] - gyro_bias)
         
         # D. Velocity Integration (Euler method)
-        # Define a dead zone to filter out noise when stationary
-        motion_threshold = 1.0  # Threshold = 1.0 m/s
-        global is_stationary
+        # Define a dead zone to filter out noise when stationary and pure rotation
 
-        if acc_motion_mag < motion_threshold:
+        # Base Threshold: 1 m/s
+        # Dynamic Factor: 0.15 m/rad
+        # dynamic_threshold increases with rotational speed to account for centrifugal effects
+        dynamic_threshold = 1 + 0.8 * raw_gyro_mag
+
+        global is_stationary
+        global is_pure_rotation
+
+        if acc_motion_mag < dynamic_threshold:
             acc_motion = np.zeros(3)
             v_curr = np.zeros(3)
-            is_stationary = True
+
+            if raw_gyro_mag > 1:  # Rotation Threshold: 1
+                is_stationary = False
         else:
             v_curr = v_curr + acc_motion * dt
+            
+            is_stationary = False
+            is_pure_rotation = False
             
         velocities[i] = v_curr
         
@@ -208,7 +223,15 @@ def plot_data(df):
     ax1 = plt.subplot2grid(grid, (0, 0), rowspan=2, projection='3d')
     ax1.plot(df['X'], df['Y'], df['Z'], label='Corrected Trajectory', linewidth=2)
     ax1.plot(df['X_raw'], df['Y_raw'], df['Z_raw'], label='Raw Integration (Drift)', linestyle=':', alpha=0.5)
-    ax1.set_title("3D Trajectory(Stationary)" if is_stationary else "3D Trajectory")
+
+    if is_stationary:
+        title = "3D Trajectory (Stationary)"
+    elif is_pure_rotation:
+        title = "3D Trajectory (Pure Rotation)"
+    else:
+        title = "3D Trajectory"
+    ax1.set_title(title)
+
     ax1.set_xlabel("X (m)")
     ax1.set_ylabel("Y (m)")
     ax1.set_zlabel("Z (m)")
@@ -275,9 +298,10 @@ def plot_data(df):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    filepath = os.path.join(script_dir, '../raw_data/stationary_2.txt')
+    filepath = os.path.join(script_dir, '../raw_data/projectile.txt')
             
     df = parse_data(filepath)
-    is_stationary = False
+    is_stationary = True
+    is_pure_rotation = True
     df_kinematics = calculate_kinematics(df)
     plot_data(df_kinematics)
