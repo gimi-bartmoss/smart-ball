@@ -228,6 +228,10 @@ def plot_data(df):
     ax1.plot(df['X'], df['Y'], df['Z'], label='Corrected Trajectory', linewidth=2)
     ax1.plot(df['X_raw'], df['Y_raw'], df['Z_raw'], label='Raw Integration (Drift)', linestyle=':', alpha=0.5)
 
+    # Add start and end markers
+    ax1.scatter(df['X'].iloc[0], df['Y'].iloc[0], df['Z'].iloc[0], color='green', s=100, label='Start', marker='o')
+    ax1.scatter(df['X'].iloc[-1], df['Y'].iloc[-1], df['Z'].iloc[-1], color='red', s=100, label='Impact', marker='X')
+
     if is_stationary:
         title = "3D Trajectory (Stationary)"
     elif is_pure_rotation:
@@ -239,7 +243,7 @@ def plot_data(df):
     ax1.set_xlabel("X (m)")
     ax1.set_ylabel("Y (m)")
     ax1.set_zlabel("Z (m)")
-    ax1.legend()
+    ax1.legend() # This needs to be called after all labels are added
 
     # 2. Velocity components vs. Time (Left column, bottom)
     vel_mag = np.linalg.norm(df[['VX', 'VY', 'VZ']].values, axis=1)
@@ -272,13 +276,12 @@ def plot_data(df):
     # 4. World Frame Acceleration (Right column, middle)
     acc_world_mag = np.linalg.norm(df[['AMX', 'AMY', 'AMZ']].values, axis=1)
     max_acc_world = np.max(acc_world_mag)
-    max_gravity = np.max(gravity)
     ax4 = plt.subplot2grid(grid, (1, 1))
     ax4.plot(df['Time'], df['AMX'], label='AMX', alpha=0.7)
     ax4.plot(df['Time'], df['AMY'], label='AMY', alpha=0.7)
     ax4.plot(df['Time'], df['AMZ'], label='AMZ', alpha=0.7)
     ax4.plot(df['Time'], acc_world_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2) (Measured Gravity = {max_gravity:.2f} m/s^2)")
+    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2)")
     ax4.set_xlabel("Time (s)")
     ax4.set_ylabel("Accel (m/s^2)")
     ax4.legend()
