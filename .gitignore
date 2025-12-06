@@ -31,3 +31,6 @@ build/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# raw data
+raw_data/
