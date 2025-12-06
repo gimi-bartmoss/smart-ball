@@ -1,8 +1,8 @@
 import socket
 import struct
 
-HOST = "192.168.4.1"
-PORT = 8080
+HOST = "localhost"
+PORT = 8081
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
