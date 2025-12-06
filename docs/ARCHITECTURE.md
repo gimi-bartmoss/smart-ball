@@ -282,11 +282,14 @@ for i in range(1, n_samples):
 
 The ZUPT algorithm operates on the assumption that the object is stationary at $t=0$ and $t=T$. Due to sensor noise accumulation, the uncorrected terminal velocity is non-zero ($\mathbf{v}_{raw}(T) \neq \mathbf{0}$).
 
-We define the linear Drift Rate vector $\mathbf{D}$:$$\mathbf{D} = \frac{\mathbf{v}_{raw}(T) - \mathbf{v}_{true}(T)}{T} = \frac{\mathbf{v}_{raw}(T)}{T}$$
+We define the linear Drift Rate vector $\mathbf{D}$:
+$$\mathbf{D} = \frac{\mathbf{v}_{raw}(T) - \mathbf{v}_{true}(T)}{T} = \frac{\mathbf{v}_{raw}(T)}{T}$$
 
-The corrected velocity $\mathbf{v}_{corr}(t_k)$ at any time step $t_k$ is calculated as:$$\mathbf{v}_{corr}(t_k) = \mathbf{v}_{raw}(t_k) - \mathbf{D} \cdot t_k$$
+The corrected velocity $\mathbf{v}_{corr}(t_k)$ at any time step $t_k$ is calculated as:
+$$\mathbf{v}_{corr}(t_k) = \mathbf{v}_{raw}(t_k) - \mathbf{D} \cdot t_k$$
 
-The final corrected position is obtained by integrating the corrected velocity:$$\mathbf{p}_{corr}(t_k) = \sum_{i=1}^{k} \mathbf{v}_{corr}(t_i) \cdot \Delta t$$
+The final corrected position is obtained by integrating the corrected velocity:
+$$\mathbf{p}_{corr}(t_k) = \sum_{i=1}^{k} \mathbf{v}_{corr}(t_i) \cdot \Delta t$$
 
 The code below calculates the linear drift based on the final velocity error and applies the correction across the entire timeline.
 
