@@ -143,7 +143,7 @@ $$\boldsymbol{\omega}_{m} = \mathbf{S}_g \boldsymbol{\omega}_{true} + \mathbf{b}
 
 $$\mathbf{a}_{m} = \mathbf{S}_a \mathbf{a}_{true} + \mathbf{b}_a + \boldsymbol{\eta}_a$$
 
-Where $b$ represents the bias and $η$ represents noise. During the static initialization phase $0 \le t \le T_{static}$, the gyroscope bias $\hat{\mathbf{b}}_g$ is estimated by averaging the raw readings, assuming $\boldsymbol{\omega}_{true} \approx \mathbf{0}$:
+Where $b$ represents the bias and $\eta$ represents noise. During the static initialization phase $0 \le t \le T_{\text{static}}$, the gyroscope bias $\hat{\mathbf{b}}_g$ is estimated by averaging the raw readings, assuming $\boldsymbol{\omega}_{\text{true}} \approx \mathbf{0}$:
 
 $$\hat{\mathbf{b}}_g = \frac{1}{N} \sum_{k=1}^{N} \boldsymbol{\omega}_{m}(t_k)$$
 
