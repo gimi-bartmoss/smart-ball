@@ -197,7 +197,7 @@ def calculate_kinematics(df):
         # Re-integrate position using corrected velocity
         dt = dt_data[i]
         if dt > 1.0: dt = 0.01
-        p_curr_corr = p_curr_corr + v_corr * dt
+        p_curr_corr = positions_corrected[i-1] + 0.5 * (velocities_corrected[i] + velocities_corrected[i-1]) * dt
         positions_corrected[i] = p_curr_corr
 
     # Store results back to DataFrame for plotting
