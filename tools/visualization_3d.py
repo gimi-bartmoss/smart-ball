@@ -146,7 +146,7 @@ def calculate_kinematics(df):
 
         raw_gyro_mag = np.linalg.norm(gyro_data[i] - gyro_bias)
         
-        # D. Velocity Integration (Euler method)
+        # D. Velocity Integration (Trapezoidal integration)
         # Define a dead zone to filter out noise when stationary and pure rotation
 
         # Base Threshold: 1 m/s
@@ -164,7 +164,7 @@ def calculate_kinematics(df):
             if raw_gyro_mag > 1:  # Rotation Threshold: 1
                 is_stationary = False
         else:
-            v_curr = v_curr + acc_motion * dt
+            v_curr = v_curr + 0.5 * (acc_motion[i] + acc_motion[i-1]) * dt
             
             is_stationary = False
             is_pure_rotation = False
@@ -172,7 +172,7 @@ def calculate_kinematics(df):
         velocities[i] = v_curr
         
         # E. Position Integration
-        p_curr = p_curr + v_curr * dt
+        p_curr = p_curr + + 0.5 * (velocities[i] + velocities[i-1]) * dt
         positions[i] = p_curr
 
     # --- 3. Zero Velocity Update (ZUPT) ---
@@ -398,6 +398,7 @@ def plot_data(df):
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
+# TODO: update figure/
 # TODO: connect to the server
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Visualize 3D motion data from a smart ball.')
