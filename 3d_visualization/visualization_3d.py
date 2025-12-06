@@ -129,9 +129,20 @@ def calculate_kinematics(df):
         # Subtract the gravity vector to get pure motion acceleration
         acc_motion = acc_world - world_gravity
         accelerations_world[i] = acc_motion
+        acc_motion_mag = np.linalg.norm(acc_motion)
         
         # D. Velocity Integration (Euler method)
-        v_curr = v_curr + acc_motion * dt
+        # Define a dead zone to filter out noise when stationary
+        motion_threshold = 1.0  # Threshold = 1.0 m/s
+        global is_stationary
+
+        if acc_motion_mag < motion_threshold:
+            acc_motion = np.zeros(3)
+            v_curr = np.zeros(3)
+            is_stationary = True
+        else:
+            v_curr = v_curr + acc_motion * dt
+            
         velocities[i] = v_curr
         
         # E. Position Integration
@@ -197,7 +208,7 @@ def plot_data(df):
     ax1 = plt.subplot2grid(grid, (0, 0), rowspan=2, projection='3d')
     ax1.plot(df['X'], df['Y'], df['Z'], label='Corrected Trajectory', linewidth=2)
     ax1.plot(df['X_raw'], df['Y_raw'], df['Z_raw'], label='Raw Integration (Drift)', linestyle=':', alpha=0.5)
-    ax1.set_title("3D Trajectory")
+    ax1.set_title("3D Trajectory(Stationary)" if is_stationary else "3D Trajectory")
     ax1.set_xlabel("X (m)")
     ax1.set_ylabel("Y (m)")
     ax1.set_zlabel("Z (m)")
@@ -264,8 +275,9 @@ def plot_data(df):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    filepath = os.path.join(script_dir, './projectile.txt')
+    filepath = os.path.join(script_dir, '../raw_data/stationary_2.txt')
             
     df = parse_data(filepath)
+    is_stationary = False
     df_kinematics = calculate_kinematics(df)
     plot_data(df_kinematics)
