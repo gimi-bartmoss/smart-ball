@@ -160,11 +160,11 @@ $$\vec{g}\_{\text{world}} = [0, 0, \Vert \vec{a}\_{\text{static}} \Vert]$$
 
 - Calculate the rotation axis $\vec{u}$ using the Cross Product:
 
-$$ \vec{u} = \frac{\vec{a}_{static} \times \vec{g}_{world}}{||\vec{a}_{static} \times \vec{g}_{world}||} $$
+$$ \vec{u} = \frac{\vec{a}_{static} \times \vec{g}_{world}}{\Vert \vec{a}_{static} \times \vec{g}_{world} \Vert} $$
 
 - Calculate the rotation angle $\theta$ using the Dot Product:
 
-$$ \theta = \arccos\left( \frac{\vec{a}_{static} \cdot \vec{g}_{world}}{||\vec{a}_{static}|| \cdot ||\vec{g}_{world}||} \right) $$
+$$ \theta = \arccos\left( \frac{\vec{a}_{static} \cdot \vec{g}_{world}}{\Vert \vec{a}_{static} \Vert \cdot \Vert \vec{g}_{world} \Vert} \right) $$
 
 - Construct the initial quaternion using the axis and angle.
 
@@ -204,8 +204,8 @@ q_current = r_align
 During motion, the system uses angular velocity measured by the gyroscope to update the attitude quaternion.
 
 - Assuming the mean angular velocity vector over time step $\Delta t$ is $\vec{\omega} = [\omega_x, \omega_y, \omega_z]$:
-- Calculate the rotation angle magnitude: $\Delta \theta = ||\vec{\omega}|| \cdot \Delta t$.
-- Calculate the rotation axis unit vector: $\vec{n} = \frac{\vec{\omega}}{||\vec{\omega}||}$.
+- Calculate the rotation angle magnitude: $\Delta \theta = \Vert \vec{\omega} \Vert \cdot \Delta t$.
+- Calculate the rotation axis unit vector: $\vec{n} = \frac{\vec{\omega}}{\Vert \vec{\omega} \Vert}$.
 - Construct the Delta Quaternion (Incremental Rotation) $\Delta q$:
 
 $$ \Delta q = \left[ \cos\left(\frac{\Delta \theta}{2}\right), \vec{n} \sin\left(\frac{\Delta \theta}{2}\right) \right] $$
