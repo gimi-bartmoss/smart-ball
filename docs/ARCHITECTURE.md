@@ -135,11 +135,17 @@ The implementation logic is divided into two phases: **Initial Alignment** and *
 
 The inertial sensor measurements are modeled as the sum of the true value, a constant bias, and Gaussian white noise.
 
-- Gyroscope Model:$$\boldsymbol{\omega}_{m} = \mathbf{S}_g \boldsymbol{\omega}_{true} + \mathbf{b}_g + \boldsymbol{\eta}_g$$
+- Gyroscope Model:
 
-- Accelerometer Model:$$\mathbf{a}_{m} = \mathbf{S}_a \mathbf{a}_{true} + \mathbf{b}_a + \boldsymbol{\eta}_a$$
+$$\boldsymbol{\omega}_{m} = \mathbf{S}_g \boldsymbol{\omega}_{true} + \mathbf{b}_g + \boldsymbol{\eta}_g$$
 
-Where $b$ represents the bias and $η$ represents noise. During the static initialization phase $0 \le t \le T_{static}$, the gyroscope bias $\hat{\mathbf{b}}_g$ is estimated by averaging the raw readings, assuming $\boldsymbol{\omega}_{true} \approx \mathbf{0}$:$$\hat{\mathbf{b}}_g = \frac{1}{N} \sum_{k=1}^{N} \boldsymbol{\omega}_{m}(t_k)$$
+- Accelerometer Model:
+
+$$\mathbf{a}_{m} = \mathbf{S}_a \mathbf{a}_{true} + \mathbf{b}_a + \boldsymbol{\eta}_a$$
+
+Where $b$ represents the bias and $η$ represents noise. During the static initialization phase $0 \le t \le T_{static}$, the gyroscope bias $\hat{\mathbf{b}}_g$ is estimated by averaging the raw readings, assuming $\boldsymbol{\omega}_{true} \approx \mathbf{0}$:
+
+$$\hat{\mathbf{b}}_g = \frac{1}{N} \sum_{k=1}^{N} \boldsymbol{\omega}_{m}(t_k)$$
 
 This bias is subtracted from all subsequent readings: $\boldsymbol{\omega} = \boldsymbol{\omega}_{m} - \hat{\mathbf{b}}_g$
 
@@ -149,8 +155,14 @@ During the initial system startup, the gravity vector in the static state is use
 
 1. Calculate the mean acceleration vector $\vec{a}_{static}$ during the static period.
 1. Define the World Frame gravity vector $\vec{g}_{world} = [0, 0, |\vec{a}_{static}|]$.
-1. Calculate the rotation axis $\vec{u}$ using the Cross Product: $$ \vec{u} = \frac{\vec{a}{static} \times \vec{g}{world}}{||\vec{a}{static} \times \vec{g}{world}||} $$
-1. Calculate the rotation angle $\theta$ using the Dot Product: $$ \theta = \arccos\left( \frac{\vec{a}{static} \cdot \vec{g}{world}}{||\vec{a}{static}|| \cdot ||\vec{g}{world}||} \right) $$
+1. Calculate the rotation axis $\vec{u}$ using the Cross Product:
+
+$$ \vec{u} = \frac{\vec{a}{static} \times \vec{g}{world}}{||\vec{a}{static} \times \vec{g}{world}||} $$
+
+1. Calculate the rotation angle $\theta$ using the Dot Product:
+
+$$ \theta = \arccos\left( \frac{\vec{a}{static} \cdot \vec{g}{world}}{||\vec{a}{static}|| \cdot ||\vec{g}{world}||} \right) $$
+
 1. Construct the initial quaternion using the axis and angle.
 
 Implemented using the scipy.spatial.transform.Rotation library:
@@ -188,11 +200,15 @@ q_current = r_align
 
 During motion, the system uses angular velocity measured by the gyroscope to update the attitude quaternion.
 
-1. Assuming the mean angular velocity vector over time step $\Delta t$ is $\vec{\omega} = [\omega_x, \omega_y, \omega_z]$:
-1. Calculate the rotation angle magnitude: $\Delta \theta = ||\vec{\omega}|| \cdot \Delta t$.
-1. Calculate the rotation axis unit vector: $\vec{n} = \frac{\vec{\omega}}{||\vec{\omega}||}$.
-1. Construct the Delta Quaternion (Incremental Rotation) $\Delta q$: $$ \Delta q = \left[ \cos\left(\frac{\Delta \theta}{2}\right), \vec{n} \sin\left(\frac{\Delta \theta}{2}\right) \right] $$
-1. Update the current attitude $q_{k+1}$ (Quaternion Multiplication):
+- Assuming the mean angular velocity vector over time step $\Delta t$ is $\vec{\omega} = [\omega_x, \omega_y, \omega_z]$:
+- Calculate the rotation angle magnitude: $\Delta \theta = ||\vec{\omega}|| \cdot \Delta t$.
+- Calculate the rotation axis unit vector: $\vec{n} = \frac{\vec{\omega}}{||\vec{\omega}||}$.
+- Construct the Delta Quaternion (Incremental Rotation) $\Delta q$:
+
+$$ \Delta q = \left[ \cos\left(\frac{\Delta \theta}{2}\right), \vec{n} \sin\left(\frac{\Delta \theta}{2}\right) \right] $$
+
+- Update the current attitude $q_{k+1}$ (Quaternion Multiplication):
+
 $$ q_{k+1} = q_{k} \otimes \Delta q $$
 
 The following logic is executed for each sample point within the integration loop:
@@ -223,9 +239,13 @@ if angle_magnitude > 0:
 
 After obtaining the updated attitude quaternion $q_{current}$, the acceleration measured in the Body Frame ($\mathbf{a}_{body}$) is projected into the World Frame ($\mathbf{a}_{world}$) for gravity compensation and position integration.
 
-Acceleration is transformed from the Body Frame ($B$) to the World Frame ($W$) using the current attitude $q_k$​:$$\mathbf{a}_{world} = q_k \otimes \mathbf{a}_{body} \otimes q_k^{-1}$$
+Acceleration is transformed from the Body Frame ($B$) to the World Frame ($W$) using the current attitude $q_k$​:
 
-The pure motion acceleration amotion​ is obtained by removing the gravity component:$$\mathbf{a}_{motion} = \mathbf{a}_{world} - \mathbf{g}_{world}$$
+$$\mathbf{a}_{world} = q_k \otimes \mathbf{a}_{body} \otimes q_k^{-1}$$
+
+The pure motion acceleration amotion​ is obtained by removing the gravity component:
+
+$$\mathbf{a}_{motion} = \mathbf{a}_{world} - \mathbf{g}_{world}$$
 
 ```py
 # [source: tools/visualization_3d.py]
@@ -283,12 +303,15 @@ for i in range(1, n_samples):
 The ZUPT algorithm operates on the assumption that the object is stationary at $t=0$ and $t=T$. Due to sensor noise accumulation, the uncorrected terminal velocity is non-zero ($\mathbf{v}_{raw}(T) \neq \mathbf{0}$).
 
 We define the linear Drift Rate vector $\mathbf{D}$:
+
 $$\mathbf{D} = \frac{\mathbf{v}_{raw}(T) - \mathbf{v}_{true}(T)}{T} = \frac{\mathbf{v}_{raw}(T)}{T}$$
 
 The corrected velocity $\mathbf{v}_{corr}(t_k)$ at any time step $t_k$ is calculated as:
+
 $$\mathbf{v}_{corr}(t_k) = \mathbf{v}_{raw}(t_k) - \mathbf{D} \cdot t_k$$
 
 The final corrected position is obtained by integrating the corrected velocity:
+
 $$\mathbf{p}_{corr}(t_k) = \sum_{i=1}^{k} \mathbf{v}_{corr}(t_i) \cdot \Delta t$$
 
 The code below calculates the linear drift based on the final velocity error and applies the correction across the entire timeline.
