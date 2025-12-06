@@ -154,14 +154,14 @@ This bias is subtracted from all subsequent readings: $\boldsymbol{\omega} = \bo
 During the initial system startup, the gravity vector in the static state is used to infer the ball's initial attitude. The goal is to calculate a rotation quaternion $q_{init}$ such that the gravity vector measured by the sensor (Body Frame) aligns with the World Frame gravity vector ($[0, 0, g]$).
 
 1. Calculate the mean acceleration vector $\vec{a}_{static}$ during the static period.
-1. Define the World Frame gravity vector $\vec{g}_{world} = [0, 0, |\vec{a}_{static}|]$.
+1. Define the World Frame gravity vector $\vec{g}_{\text{world}} = [0, 0, \|\vec{a}_{\text{static}}\|]$
 1. Calculate the rotation axis $\vec{u}$ using the Cross Product:
 
-$$ \vec{u} = \frac{\vec{a}{static} \times \vec{g}{world}}{||\vec{a}{static} \times \vec{g}{world}||} $$
+$$ \vec{u} = \frac{\vec{a}_{static} \times \vec{g}_{world}}{||\vec{a}_{static} \times \vec{g}_{world}||} $$
 
 1. Calculate the rotation angle $\theta$ using the Dot Product:
 
-$$ \theta = \arccos\left( \frac{\vec{a}{static} \cdot \vec{g}{world}}{||\vec{a}{static}|| \cdot ||\vec{g}{world}||} \right) $$
+$$ \theta = \arccos\left( \frac{\vec{a}_{static} \cdot \vec{g}_{world}}{||\vec{a}_{static}|| \cdot ||\vec{g}_{world}||} \right) $$
 
 1. Construct the initial quaternion using the axis and angle.
 
