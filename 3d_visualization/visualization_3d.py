@@ -384,6 +384,17 @@ def plot_data(df):
     
     # --- End of Animation Setup ---
 
+    # 7. Temperature vs. Time (Right column, bottom)
+    if 'Temp' in df.columns:
+        ax_temp = plt.subplot2grid(grid, (2, 2))
+        ax_temp.plot(df['Time'], df['Temp'], label='Temperature', color='purple')
+        ax_temp.set_title("Temperature")
+        ax_temp.set_xlabel("Time (s)")
+        ax_temp.set_ylabel("Temp (°C)")
+        ax_temp.legend()
+        ax_temp.grid(True)
+
+
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
