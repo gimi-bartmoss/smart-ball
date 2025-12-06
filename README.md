@@ -58,6 +58,20 @@ pip install numpy matplotlib pyglet
 1. **2D Visualization:** `python visualization/visualization.py`
 1. **3D Visualization:** `python 3d_visualization/visualization_3d.py`
 
+## Visualizations
+
+### Projectile Motion
+
+![Projectile Motion](figure/projectile.png)
+
+### Stationary Ball
+
+![Stationary Ball](figure/stationary.png)
+
+### Ball Rotation
+
+![Ball Rotation](figure/rotation.png)
+
 ## Directory Structure
 
 ```bash
