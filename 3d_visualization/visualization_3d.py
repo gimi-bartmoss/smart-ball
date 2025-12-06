@@ -67,6 +67,9 @@ def calculate_kinematics(df):
     # Measured gravity vector in Body Frame. We define world gravity to match the direction of the sensor's measurement.
     local_gravity_magnitude = np.linalg.norm(acc_static_mean)
     world_gravity = np.array([0, 0, local_gravity_magnitude])
+
+    global gravity
+    gravity = local_gravity_magnitude
     
     # Normalize vectors for calculation
     acc_static_norm = acc_static_mean / np.linalg.norm(acc_static_mean)
@@ -269,12 +272,13 @@ def plot_data(df):
     # 4. World Frame Acceleration (Right column, middle)
     acc_world_mag = np.linalg.norm(df[['AMX', 'AMY', 'AMZ']].values, axis=1)
     max_acc_world = np.max(acc_world_mag)
+    max_gravity = np.max(gravity)
     ax4 = plt.subplot2grid(grid, (1, 1))
     ax4.plot(df['Time'], df['AMX'], label='AMX', alpha=0.7)
     ax4.plot(df['Time'], df['AMY'], label='AMY', alpha=0.7)
     ax4.plot(df['Time'], df['AMZ'], label='AMZ', alpha=0.7)
     ax4.plot(df['Time'], acc_world_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2)")
+    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2) (Measured Gravity = {max_gravity:.2f} m/s^2)")
     ax4.set_xlabel("Time (s)")
     ax4.set_ylabel("Accel (m/s^2)")
     ax4.legend()
@@ -311,5 +315,6 @@ if __name__ == "__main__":
     df = parse_data(filepath)
     is_stationary = True
     is_pure_rotation = True
+    gravity = 9.81
     df_kinematics = calculate_kinematics(df)
     plot_data(df_kinematics)
