@@ -398,6 +398,7 @@ def plot_data(df):
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
+# TODO: connect to the server
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Visualize 3D motion data from a smart ball.')
     parser.add_argument('--input', type=str, help='Path to the input data file.')
