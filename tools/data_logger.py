@@ -11,7 +11,7 @@ RELAY_HOST = "localhost"
 RELAY_PORT = 8081
 
 # Directory to save data
-DATA_DIR = "data/"
+DATA_DIR = "raw_data/"
 
 class DataCollector(threading.Thread):
     """A thread that connects to the relay server and collects data."""
