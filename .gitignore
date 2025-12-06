@@ -32,5 +32,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# raw data
+# data log
 raw_data/
+demo/data
