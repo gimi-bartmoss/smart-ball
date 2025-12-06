@@ -94,11 +94,15 @@ def calculate_kinematics(df):
     velocities = np.zeros((len(df), 3))
     positions = np.zeros((len(df), 3))
     accelerations_world = np.zeros((len(df), 3))
+    quaternions = np.zeros((len(df), 4)) # Store as [x, y, z, w]
     
     # State vectors
     v_curr = np.array([0.0, 0.0, 0.0])
     p_curr = np.array([0.0, 0.0, 0.0])
     
+    # Store initial quaternion
+    quaternions[0] = q_current.as_quat()
+
     # Extract numpy arrays for performance
     acc_data = df[['AX', 'AY', 'AZ']].values
     gyro_data = df[['GX', 'GY', 'GZ']].values  # Assumed rad/s
@@ -125,6 +129,9 @@ def calculate_kinematics(df):
             # Update global attitude: q_new = q_old * q_delta
             q_current = q_current * r_delta
         
+        # Store current orientation
+        quaternions[i] = q_current.as_quat()
+
         # B. Specific Force Projection (Body Frame -> World Frame)
         acc_body = acc_data[i]
         acc_world = q_current.apply(acc_body)
@@ -183,7 +190,7 @@ def calculate_kinematics(df):
         t_elapsed = df['Time'].iloc[i] - df['Time'].iloc[0]
         drift_rate = t_elapsed / total_time
         
-        # Apply linear drift correction to velocity
+        # Apply linear drift.
         v_corr = velocities[i] - (v_error * drift_rate)
         velocities_corrected[i] = v_corr
         
@@ -206,6 +213,11 @@ def calculate_kinematics(df):
     df['AMY'] = accelerations_world[:, 1]
     df['AMZ'] = accelerations_world[:, 2]
     
+    df['QX'] = quaternions[:, 0]
+    df['QY'] = quaternions[:, 1]
+    df['QZ'] = quaternions[:, 2]
+    df['QW'] = quaternions[:, 3]
+
     # Store uncorrected position for comparison (optional)
     df['X_raw'] = positions[:, 0]
     df['Y_raw'] = positions[:, 1]
@@ -213,17 +225,19 @@ def calculate_kinematics(df):
 
     return df
 
+from matplotlib.animation import FuncAnimation
+
 def plot_data(df):
     """
-    Plots the 3D trajectory and kinematic data.
+    Plots the 3D trajectory, kinematic data, and a separate ball rotation animation.
     """
-    fig = plt.figure(figsize=(18, 12)) # Adjusted figure size for a better layout
+    fig = plt.figure(figsize=(22, 12)) # Adjusted figure size for a wider layout
     plt.suptitle("Projectile Motion Analysis (INS with ZUPT)", fontsize=16)
 
-    # Define the grid
-    grid = (3, 2)
+    # Define the grid, now with 3 columns
+    grid = (3, 3)
 
-    # 1. 3D Trajectory (Left column, spanning 2 rows)
+    # 1. 3D Trajectory (Left column, spanning 2 rows) - Static Plot
     ax1 = plt.subplot2grid(grid, (0, 0), rowspan=2, projection='3d')
     ax1.plot(df['X'], df['Y'], df['Z'], label='Corrected Trajectory', linewidth=2)
     ax1.plot(df['X_raw'], df['Y_raw'], df['Z_raw'], label='Raw Integration (Drift)', linestyle=':', alpha=0.5)
@@ -239,11 +253,11 @@ def plot_data(df):
     else:
         title = "3D Trajectory"
     ax1.set_title(title)
-
     ax1.set_xlabel("X (m)")
     ax1.set_ylabel("Y (m)")
     ax1.set_zlabel("Z (m)")
-    ax1.legend() # This needs to be called after all labels are added
+    ax1.legend()
+    ax1.set_aspect('equal', adjustable='box')
 
     # 2. Velocity components vs. Time (Left column, bottom)
     vel_mag = np.linalg.norm(df[['VX', 'VY', 'VZ']].values, axis=1)
@@ -259,7 +273,7 @@ def plot_data(df):
     ax2.legend()
     ax2.grid(True)
 
-    # 3. Raw Acceleration (Right column, top)
+    # 3. Raw Acceleration (Middle column, top)
     acc_raw_mag = np.linalg.norm(df[['AX', 'AY', 'AZ']].values, axis=1)
     max_acc_raw = np.max(acc_raw_mag)
     ax3 = plt.subplot2grid(grid, (0, 1))
@@ -273,7 +287,7 @@ def plot_data(df):
     ax3.legend()
     ax3.grid(True)
 
-    # 4. World Frame Acceleration (Right column, middle)
+    # 4. World Frame Acceleration (Middle column, middle)
     acc_world_mag = np.linalg.norm(df[['AMX', 'AMY', 'AMZ']].values, axis=1)
     max_acc_world = np.max(acc_world_mag)
     max_gravity = np.max(gravity)
@@ -288,7 +302,7 @@ def plot_data(df):
     ax4.legend()
     ax4.grid(True)
     
-    # 5. Angular Velocity (Right column, bottom)
+    # 5. Angular Velocity (Middle column, bottom)
     gyro_mag = np.linalg.norm(df[['GX', 'GY', 'GZ']].values, axis=1)
     max_rot_speed = np.max(gyro_mag)
     ax5 = plt.subplot2grid(grid, (2, 1))
@@ -301,6 +315,74 @@ def plot_data(df):
     ax5.set_ylabel("Rad/s")
     ax5.legend()
     ax5.grid(True)
+
+    # --- Start of Animation Setup ---
+
+    # 6. 3D Ball Rotation Animation (Right column, spanning 2 rows)
+    ax_rot = plt.subplot2grid(grid, (0, 2), rowspan=2, projection='3d')
+    
+    # Find the maximum angular velocity vector and magnitude
+    gyro_data = df[['GX', 'GY', 'GZ']].values
+    gyro_mag_anim = np.linalg.norm(gyro_data, axis=1)
+    max_gyro_idx = np.argmax(gyro_mag_anim)
+    max_angular_velocity_magnitude = gyro_mag_anim[max_gyro_idx]
+
+    if max_angular_velocity_magnitude > 0:
+        max_angular_velocity_axis = gyro_data[max_gyro_idx] / max_angular_velocity_magnitude
+        rpm = max_angular_velocity_magnitude * 60 / (2 * np.pi)
+    else:
+        max_angular_velocity_magnitude = 0
+        max_angular_velocity_axis = np.array([0, 0, 1]) # Default axis
+        rpm = 0.0 # No rotation
+        
+    baseball_radius = 0.0368 
+    animation_interval_sec = 33 / 1000.0 # Match the interval in FuncAnimation
+
+    u = np.linspace(0, 2 * np.pi, 12)
+    v = np.linspace(0, np.pi, 7)
+    x_sphere = baseball_radius * np.outer(np.cos(u), np.sin(v))
+    y_sphere = baseball_radius * np.outer(np.sin(u), np.sin(v))
+    z_sphere = baseball_radius * np.outer(np.ones(np.size(u)), np.cos(v))
+    sphere_body_frame = np.stack([x_sphere.flatten(), y_sphere.flatten(), z_sphere.flatten()])
+
+    def update_rotation(frame):
+        ax_rot.cla() 
+
+        # Create a rotation that spins around the fixed max-velocity axis
+        current_angle = max_angular_velocity_magnitude * frame * animation_interval_sec
+        orientation = R.from_rotvec(max_angular_velocity_axis * current_angle)
+        
+        # Rotate sphere points
+        sphere_world_frame = orientation.apply(sphere_body_frame.T).T
+        
+        x_sphere_rot = sphere_world_frame[0,:].reshape(x_sphere.shape)
+        y_sphere_rot = sphere_world_frame[1,:].reshape(y_sphere.shape)
+        z_sphere_rot = sphere_world_frame[2,:].reshape(z_sphere.shape)
+        
+        # Plot the ball's wireframe at the origin
+        ax_rot.plot_wireframe(x_sphere_rot, y_sphere_rot, z_sphere_rot, color='black', lw=0.5)
+
+        # Draw the fixed rotation axis
+        axis_start = -max_angular_velocity_axis * baseball_radius * 1.5
+        axis_end = max_angular_velocity_axis * baseball_radius * 1.5
+        ax_rot.plot([axis_start[0], axis_end[0]], [axis_start[1], axis_end[1]], [axis_start[2], axis_end[2]], color='red', lw=2, label='Max Rotation Axis')
+
+        ax_rot.set_title(f"Ball Rotation ({rpm:.2f} rpm)")
+        ax_rot.set_xlabel("X"); ax_rot.set_ylabel("Y"); ax_rot.set_zlabel("Z")
+        
+        lim = baseball_radius * 2
+        ax_rot.set_xlim(-lim, lim); ax_rot.set_ylim(-lim, lim); ax_rot.set_zlim(-lim, lim)
+        ax_rot.set_aspect('equal')
+        
+        if frame == 0:
+            ax_rot.legend(loc='upper right')
+        
+        return fig,
+
+    # Use a large number of frames for a long, smooth animation
+    ani = FuncAnimation(fig, update_rotation, frames=400, blit=False, interval=33)
+    
+    # --- End of Animation Setup ---
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
