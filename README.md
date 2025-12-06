@@ -8,8 +8,8 @@ The core of this project is the Inertial Measurement Unit (IMU). An IMU is an el
 
 In this project, we use the MPU-6050, which contains a 3-axis accelerometer and a 3-axis gyroscope.
 
--   **Accelerometer**: Measures linear acceleration. When the ball is stationary, it measures the Earth's gravitational acceleration (~9.8 m/s²). When the ball is in motion, it measures the acceleration due to that motion combined with gravity.
--   **Gyroscope**: Measures angular velocity or the rate of rotation. This tells us how fast the ball is spinning around its X, Y, and Z axes.
+- **Accelerometer**: Measures linear acceleration. When the ball is stationary, it measures the Earth's gravitational acceleration (~9.8 m/s²). When the ball is in motion, it measures the acceleration due to that motion combined with gravity.
+- **Gyroscope**: Measures angular velocity or the rate of rotation. This tells us how fast the ball is spinning around its X, Y, and Z axes.
 
 By processing the data from these two sensors, we can reconstruct the ball's movement in 3D space.
 
@@ -17,29 +17,29 @@ By processing the data from these two sensors, we can reconstruct the ball's mov
 
 The data flows from the smart ball to the computer for processing and visualization.
 
-`[Smart Ball: ESP32 + MPU-6050]` -> `Wi-Fi (UDP)` -> `[Computer: Python Scripts]`
+`[Smart Ball: ESP32 + MPU-6050]` -> `Wi-Fi (TCP)` -> `[Computer: Python Scripts]`
 
-1.  The **MPU-6050** continuously measures acceleration and angular velocity.
-2.  The **ESP32-C3** reads this data and streams it over a Wi-Fi network using the UDP protocol.
-3.  A **Python script** on the computer listens for this UDP data stream. It can then be used to log the data, visualize it in real-time, or relay it to other applications.
+1. The **MPU-6050** continuously measures acceleration and angular velocity.
+1. The **ESP32-C3** reads this data and streams it over a Wi-Fi network using the UDP protocol.
+1. A **Python script** on the computer listens for this TCP data stream. It can then be used to log the data, visualize it in real-time, or relay it to other applications.
 
 ## Measurement Principle
 
 The trajectory of the ball is estimated by processing the raw sensor data from the MPU-6050.
 
-1.  **Orientation**: The gyroscope data is used to track the orientation of the ball. By integrating the angular velocity over time, we can determine the ball's orientation (roll, pitch, yaw).
-2.  **Acceleration Correction**: The initial orientation is used to subtract the effect of gravity from the accelerometer readings. This leaves us with the linear acceleration of the ball.
-3.  **Trajectory Calculation**: By integrating the linear acceleration twice with respect to time, we can calculate the ball's velocity and then its position, effectively reconstructing its path of motion.
+1. **Orientation**: The gyroscope data is used to track the orientation of the ball. By integrating the angular velocity over time, we can determine the ball's orientation (roll, pitch, yaw).
+1. **Acceleration Correction**: The initial orientation is used to subtract the effect of gravity from the accelerometer readings. This leaves us with the linear acceleration of the ball.
+1. **Trajectory Calculation**: By integrating the linear acceleration twice with respect to time, we can calculate the ball's velocity and then its position, effectively reconstructing its path of motion.
 
-*   `Velocity = Initial Velocity + ∫(Linear Acceleration) dt`
-*   `Position = Initial Position + ∫(Velocity) dt`
+- `Velocity = Initial Velocity + ∫(Linear Acceleration) dt`
+- `Position = Initial Position + ∫(Velocity) dt`
 
 This process allows us to translate the raw electrical signals from the sensor into a meaningful 3D trajectory.
 
 ## Hardware
 
--   **Microcontroller:** ESP32-C3 SuperMini
--   **Sensor:** MPU-6050 6-axis accelerometer and gyroscope
+- **Microcontroller:** ESP32-C3 SuperMini
+- **Sensor:** MPU-6050 6-axis accelerometer and gyroscope
 
 ## Firmware
 
@@ -47,16 +47,16 @@ The firmware for the ESP32-C3 is located in the `esp32-c3-supermini` directory. 
 
 ### Dependencies
 
--   Adafruit MPU6050
--   Adafruit Unified Sensor
--   Adafruit BusIO
+- Adafruit MPU6050
+- Adafruit Unified Sensor
+- Adafruit BusIO
 
 ### Building and Flashing
 
-1.  Open the `esp32-c3-supermini` directory in Visual Studio Code with the PlatformIO extension.
-2.  Connect the ESP32-C3 to your computer.
-3.  Modify the Wi-Fi credentials in `src/main.cpp` to connect to your network.
-4.  Build and upload the firmware using the PlatformIO interface.
+1. Open the `esp32-c3-supermini` directory in Visual Studio Code with the PlatformIO extension.
+1. Connect the ESP32-C3 to your computer.
+1. Modify the Wi-Fi credentials in `src/main.cpp` to connect to your network.
+1. Build and upload the firmware using the PlatformIO interface.
 
 ## Software
 
@@ -64,10 +64,10 @@ The software components are located in the `tools`, `visualization`, and `visual
 
 ### Requirements
 
--   Python 3
--   NumPy
--   Matplotlib
--   Pyglet
+- Python 3
+- NumPy
+- Matplotlib
+- Pyglet
 
 ### Installation
 
@@ -77,28 +77,35 @@ pip install numpy matplotlib pyglet
 
 ### Operation Flow
 
-1.  **Start the ESP32**: Power on the smart ball. It will automatically connect to the configured Wi-Fi network and start broadcasting sensor data.
+1. **Start the ESP32**: Power on the smart ball. It will automatically connect to the configured Wi-Fi network and start broadcasting sensor data.
 
-2.  **Run the Data Relay (Optional but Recommended)**: The `data_relay.py` script listens for data from the ESP32 and re-broadcasts it on `localhost`. This allows multiple client applications (like a logger and a visualizer) to access the data stream simultaneously.
+1. **Run the Data Relay (Optional but Recommended)**: The `data_relay.py` script listens for data from the ESP32 and re-broadcasts it on `localhost`. This allows multiple client applications (like a logger and a visualizer) to access the data stream simultaneously.
 
     ```bash
     python tools/data_relay.py
     ```
 
-3.  **Choose a Tool**:
-    -   **Monitor**: To see the raw sensor data printed to the console, run:
+1. **Choose a Tool**:
+    - **Monitor**: To see the raw sensor data printed to the console, run:
+
         ```bash
         python tools/monitor.py
         ```
-    -   **Data Logger**: To save the sensor data to a file for later analysis, run:
+
+    - **Data Logger**: To save the sensor data to a file for later analysis, run:
+
         ```bash
         python tools/data_logger.py
         ```
-    -   **2D Visualization**: To see a simple 2D plot of the data, run:
+
+    - **2D Visualization**: To see a simple 2D plot of the data, run:
+
         ```bash
         python visualization/visualization.py
         ```
-    -   **3D Visualization**: To see a full 3D representation of the ball's trajectory, run:
+
+    - **3D Visualization**: To see a full 3D representation of the ball's trajectory, run:
+
         ```bash
         python visualization_3d/visualization_3d.py
         ```
@@ -119,7 +126,7 @@ pip install numpy matplotlib pyglet
 
 ## Directory Structure
 
-```
+```bash
 .
 ├── visualization_3d/     # 3D visualization scripts
 ├── esp32-c3-supermini/     # Firmware for the ESP32-C3
