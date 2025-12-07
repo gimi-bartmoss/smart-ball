@@ -22,6 +22,7 @@ def connect_to_esp32():
         try:
             print(f"Attempting to connect to ESP32 at {ESP32_HOST}:{ESP32_PORT}...")
             esp32_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            esp32_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             esp32_socket.connect((ESP32_HOST, ESP32_PORT))
             print("Successfully connected to ESP32.")
             return esp32_socket
