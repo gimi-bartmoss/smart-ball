@@ -155,7 +155,6 @@ The system accurately captures rotational motion, which is visualized in the 3D 
 │   └── stationary.png
 ├── sample_data/              # Directory for pre-recorded sample sensor data
 └── tools/
-    ├── analysis.py           # Post-processing and analysis scripts
     ├── client_test.py        # TCP client for testing
     ├── data_logger.py        # Logs sensor data to a file
     ├── data_relay.py         # Relays data from the ball to local clients
