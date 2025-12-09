@@ -4,6 +4,9 @@ import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
+from matplotlib.animation import FuncAnimation
+
+ani = None
 
 def parse_data(filepath):
     """
@@ -225,19 +228,39 @@ def calculate_kinematics(df):
 
     return df
 
-from matplotlib.animation import FuncAnimation
-
 def plot_data(df):
     """
     Plots the 3D trajectory, kinematic data, and a separate ball rotation animation.
     """
-    fig = plt.figure(figsize=(22, 12)) # Adjusted figure size for a wider layout
+    fig = plt.figure(figsize=(24, 12)) # Adjusted figure size for a 3x3 layout
     plt.suptitle("Projectile Motion Analysis (INS with ZUPT)", fontsize=16)
 
-    # Define the grid, now with 3 columns
+    # Define the grid
     grid = (3, 3)
 
-    # 1. 3D Trajectory (Left column, spanning 2 rows) - Static Plot
+    # --- Calculate Key Metrics ---
+    vel_mag = np.linalg.norm(df[['VX', 'VY', 'VZ']].values, axis=1)
+    max_speed_ms = np.max(vel_mag)
+    max_speed_kmh = max_speed_ms * 3.6
+
+    gyro_data = df[['GX', 'GY', 'GZ']].values
+    gyro_mag_rads = np.linalg.norm(gyro_data, axis=1)
+    max_rot_speed_rads = np.max(gyro_mag_rads)
+    
+    max_gyro_idx = np.argmax(gyro_mag_rads)
+    max_angular_velocity_magnitude = gyro_mag_rads[max_gyro_idx]
+
+    if max_angular_velocity_magnitude > 0:
+        max_angular_velocity_axis = gyro_data[max_gyro_idx] / max_angular_velocity_magnitude
+        rpm = max_angular_velocity_magnitude * 60 / (2 * np.pi)
+    else:
+        max_angular_velocity_magnitude = 0
+        max_angular_velocity_axis = np.array([0, 0, 1]) # Default axis
+        rpm = 0.0 # No rotation
+
+    # --- Column 0: Trajectory & Velocity ---
+    
+    # 1. 3D Trajectory (spanning 2 rows)
     ax1 = plt.subplot2grid(grid, (0, 0), rowspan=2, projection='3d')
     ax1.plot(df['X'], df['Y'], df['Z'], label='Corrected Trajectory', linewidth=2)
     ax1.plot(df['X_raw'], df['Y_raw'], df['Z_raw'], label='Raw Integration (Drift)', linestyle=':', alpha=0.5)
@@ -253,27 +276,23 @@ def plot_data(df):
     else:
         title = "3D Trajectory"
     ax1.set_title(title)
-    ax1.set_xlabel("X (m)")
-    ax1.set_ylabel("Y (m)")
-    ax1.set_zlabel("Z (m)")
+    ax1.set_xlabel("X (m)"); ax1.set_ylabel("Y (m)"); ax1.set_zlabel("Z (m)")
     ax1.legend()
     ax1.set_aspect('equal', adjustable='box')
 
-    # 2. Velocity components vs. Time (Left column, bottom)
-    vel_mag = np.linalg.norm(df[['VX', 'VY', 'VZ']].values, axis=1)
-    max_speed = np.max(vel_mag)
+    # 2. Velocity components vs. Time
     ax2 = plt.subplot2grid(grid, (2, 0))
     ax2.plot(df['Time'], df['VX'], label='VX', alpha=0.7)
     ax2.plot(df['Time'], df['VY'], label='VY', alpha=0.7)
     ax2.plot(df['Time'], df['VZ'], label='VZ', alpha=0.7)
     ax2.plot(df['Time'], vel_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    ax2.set_title(f"Velocity (Max Norm: {max_speed:.2f} m/s)")
-    ax2.set_xlabel("Time (s)")
-    ax2.set_ylabel("Velocity (m/s)")
-    ax2.legend()
-    ax2.grid(True)
+    ax2.set_title(f"Velocity (Max Norm: {max_speed_ms:.2f} m/s)")
+    ax2.set_xlabel("Time (s)"); ax2.set_ylabel("Velocity (m/s)")
+    ax2.legend(); ax2.grid(True)
 
-    # 3. Raw Acceleration (Middle column, top)
+    # --- Column 1: Kinematic Plots ---
+
+    # 3. Raw Acceleration
     acc_raw_mag = np.linalg.norm(df[['AX', 'AY', 'AZ']].values, axis=1)
     max_acc_raw = np.max(acc_raw_mag)
     ax3 = plt.subplot2grid(grid, (0, 1))
@@ -282,12 +301,10 @@ def plot_data(df):
     ax3.plot(df['Time'], df['AZ'], label='AZ', alpha=0.7)
     ax3.plot(df['Time'], acc_raw_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
     ax3.set_title(f"Raw Acceleration (Max Norm: {max_acc_raw:.2f} m/s^2)")
-    ax3.set_xlabel("Time (s)")
-    ax3.set_ylabel("Accel (m/s^2)")
-    ax3.legend()
-    ax3.grid(True)
+    ax3.set_xlabel("Time (s)"); ax3.set_ylabel("Accel (m/s^2)")
+    ax3.legend(); ax3.grid(True)
 
-    # 4. World Frame Acceleration (Middle column, middle)
+    # 4. World Frame Acceleration
     acc_world_mag = np.linalg.norm(df[['AMX', 'AMY', 'AMZ']].values, axis=1)
     max_acc_world = np.max(acc_world_mag)
     max_gravity = np.max(gravity)
@@ -296,47 +313,27 @@ def plot_data(df):
     ax4.plot(df['Time'], df['AMY'], label='AMY', alpha=0.7)
     ax4.plot(df['Time'], df['AMZ'], label='AMZ', alpha=0.7)
     ax4.plot(df['Time'], acc_world_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2) (Measured Gravity = {max_gravity:.2f} m/s^2)")
-    ax4.set_xlabel("Time (s)")
-    ax4.set_ylabel("Accel (m/s^2)")
-    ax4.legend()
-    ax4.grid(True)
+    ax4.set_title(f"World Frame Accel (Max Norm: {max_acc_world:.2f} m/s^2) (g = {max_gravity:.2f} m/s^2)")
+    ax4.set_xlabel("Time (s)"); ax4.set_ylabel("Accel (m/s^2)")
+    ax4.legend(); ax4.grid(True)
     
-    # 5. Angular Velocity (Middle column, bottom)
-    gyro_mag = np.linalg.norm(df[['GX', 'GY', 'GZ']].values, axis=1)
-    max_rot_speed = np.max(gyro_mag)
+    # 5. Angular Velocity
     ax5 = plt.subplot2grid(grid, (2, 1))
     ax5.plot(df['Time'], df['GX'], label='GX', alpha=0.7)
     ax5.plot(df['Time'], df['GY'], label='GY', alpha=0.7)
     ax5.plot(df['Time'], df['GZ'], label='GZ', alpha=0.7)
-    ax5.plot(df['Time'], gyro_mag, label='Norm', color='black', linestyle='--', linewidth=1.5)
-    ax5.set_title(f"Angular Velocity (Max Norm: {max_rot_speed:.2f} rad/s)")
-    ax5.set_xlabel("Time (s)")
-    ax5.set_ylabel("Rad/s")
-    ax5.legend()
-    ax5.grid(True)
+    ax5.plot(df['Time'], gyro_mag_rads, label='Norm', color='black', linestyle='--', linewidth=1.5)
+    ax5.set_title(f"Angular Velocity (Max Norm: {max_rot_speed_rads:.2f} rad/s)")
+    ax5.set_xlabel("Time (s)"); ax5.set_ylabel("Rad/s")
+    ax5.legend(); ax5.grid(True)
 
-    # --- Start of Animation Setup ---
-
-    # 6. 3D Ball Rotation Animation (Right column, spanning 2 rows)
-    ax_rot = plt.subplot2grid(grid, (0, 2), rowspan=2, projection='3d')
+    # --- Column 2: Summary Column ---
     
-    # Find the maximum angular velocity vector and magnitude
-    gyro_data = df[['GX', 'GY', 'GZ']].values
-    gyro_mag_anim = np.linalg.norm(gyro_data, axis=1)
-    max_gyro_idx = np.argmax(gyro_mag_anim)
-    max_angular_velocity_magnitude = gyro_mag_anim[max_gyro_idx]
-
-    if max_angular_velocity_magnitude > 0:
-        max_angular_velocity_axis = gyro_data[max_gyro_idx] / max_angular_velocity_magnitude
-        rpm = max_angular_velocity_magnitude * 60 / (2 * np.pi)
-    else:
-        max_angular_velocity_magnitude = 0
-        max_angular_velocity_axis = np.array([0, 0, 1]) # Default axis
-        rpm = 0.0 # No rotation
-        
+    # 6. 3D Ball Rotation Animation (spanning 2 rows)
+    ax_rot = plt.subplot2grid(grid, (0, 2), rowspan=2, projection='3d')
+            
     baseball_radius = 0.0368 
-    animation_interval_sec = 33 / 1000.0 # Match the interval in FuncAnimation
+    animation_interval_sec = 33 / 1000.0
 
     u = np.linspace(0, 2 * np.pi, 12)
     v = np.linspace(0, np.pi, 7)
@@ -344,6 +341,11 @@ def plot_data(df):
     y_sphere = baseball_radius * np.outer(np.sin(u), np.sin(v))
     z_sphere = baseball_radius * np.outer(np.ones(np.size(u)), np.cos(v))
     sphere_body_frame = np.stack([x_sphere.flatten(), y_sphere.flatten(), z_sphere.flatten()])
+    
+    info_text = f"Max Speed: {max_speed_kmh:.2f} km/h\nMax Rotation: {rpm:.2f} rpm"
+    # Position text in figure coordinates. These values may need tweaking.
+    fig.text(0.83, 0.5, info_text, ha='center', va='center', fontsize=14,
+             bbox=dict(boxstyle="round,pad=0.5", fc="wheat", alpha=0.5))
 
     def update_rotation(frame):
         ax_rot.cla() 
@@ -367,7 +369,7 @@ def plot_data(df):
         axis_end = max_angular_velocity_axis * baseball_radius * 1.5
         ax_rot.plot([axis_start[0], axis_end[0]], [axis_start[1], axis_end[1]], [axis_start[2], axis_end[2]], color='red', lw=2, label='Max Rotation Axis')
 
-        ax_rot.set_title(f"Ball Rotation ({rpm:.2f} rpm)")
+        ax_rot.set_title(f"Ball Rotation")
         ax_rot.set_xlabel("X"); ax_rot.set_ylabel("Y"); ax_rot.set_zlabel("Z")
         
         lim = baseball_radius * 2
@@ -379,12 +381,10 @@ def plot_data(df):
         
         return fig,
 
-    # Use a large number of frames for a long, smooth animation
+    global ani
     ani = FuncAnimation(fig, update_rotation, frames=400, blit=False, interval=33)
     
-    # --- End of Animation Setup ---
-
-    # 7. Temperature vs. Time (Right column, bottom)
+    # 7. Temperature vs. Time
     if 'Temp' in df.columns:
         ax_temp = plt.subplot2grid(grid, (2, 2))
         ax_temp.plot(df['Time'], df['Temp'], label='Temperature', color='purple')
@@ -393,7 +393,6 @@ def plot_data(df):
         ax_temp.set_ylabel("Temp (°C)")
         ax_temp.legend()
         ax_temp.grid(True)
-
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
