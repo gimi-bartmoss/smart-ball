@@ -144,13 +144,16 @@ The system accurately captures rotational motion, which is visualized in the 3D 
 ├── docs/
 │   └── ARCHITECTURE.md       # In-depth technical documentation
 ├── esp32-c3-supermini/
-│   ├── platformio.ini        # PlatformIO project configuration
-│   └── src/                  # Firmware source code (C++)
+│   ├── include/              # Header files (.h)
+│   ├── lib/                  # Project-specific libraries
+│   ├── src/                  # Main source code (.cpp)
+│   ├── test/                 # Test files
+│   └── platformio.ini        # PlatformIO project configuration
 ├── figure/
 │   ├── projectile.png
 │   ├── rotation.png
 │   └── stationary.png
-├── sample_data/                 # Directory for storing sample logged sensor data
+├── sample_data/              # Directory for pre-recorded sample sensor data
 └── tools/
     ├── analysis.py           # Post-processing and analysis scripts
     ├── client_test.py        # TCP client for testing
